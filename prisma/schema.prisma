@@ -8,29 +8,34 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String?
-  email     String?  @unique
-  image     String?
-  role      Role     @default(VIEWER)
+  id    String  @id @default(uuid())
+  name  String?
+  email String? @unique
+  image String?
+  role  Role    @default(VIEWER)
 
-  accounts  Account[]
-  sessions  Session[]
+  accounts Account[]
+  sessions Session[]
+
+  // Workflow relations
+  projectsAsPJ       Project[]           @relation("ProjectPJ")
+  adminConfirmations AdminConfirmation[]
+  archives           Archive[]
 
   createdAt DateTime @default(now())
 }
 
 model Account {
-  id                 String  @id @default(uuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  access_token       String?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  access_token      String?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -50,4 +55,137 @@ enum Role {
   ADMIN
   PJ
   VIEWER
+}
+
+// ==============================
+// ENUMS — WORKFLOW PENERBITAN
+// ==============================
+
+enum kategori_enum {
+  TERBITAN
+  MEDIA_SOSIAL
+  TERJEMAHAN
+  KEUANGAN
+  LAINNYA
+}
+
+enum status_task_enum {
+  DRAFT
+  SEDANG_BERJALAN
+  MENUNGGU_KONFIRMASI
+  SELESAI
+}
+
+enum progress_enum {
+  P0_25
+  P26_50
+  P51_75
+  P76_99
+  SELESAI
+}
+
+enum admin_decision_enum {
+  SETUJU
+  REVISI
+}
+
+enum archive_reason_enum {
+  AUTO_STAGE
+  FINAL_STAGE
+}
+
+// ==============================
+// MODEL — PROJECT
+// ==============================
+
+model Project {
+  id       String        @id @default(uuid())
+  judul    String
+  kategori kategori_enum
+
+  status   status_task_enum @default(DRAFT)
+  progress progress_enum    @default(P0_25)
+
+  pjId String
+  pj   User   @relation("ProjectPJ", fields: [pjId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks   Task[]
+  Archive Archive[]
+}
+
+// ==============================
+// MODEL — TASK (TAHAP WORKFLOW)
+// ==============================
+
+model Task {
+  id String @id @default(uuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  tahapKe    Int
+  judulTahap String
+
+  status   status_task_enum @default(DRAFT)
+  progress progress_enum    @default(P0_25)
+
+  deadline      DateTime?
+  linkPekerjaan String?
+  linkHasil     String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adminConfirmations AdminConfirmation[]
+  Archive            Archive[]
+}
+
+// ==============================
+// MODEL — ADMIN CONFIRMATION
+// ==============================
+
+model AdminConfirmation {
+  id String @id @default(uuid())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  adminId String
+  admin   User   @relation(fields: [adminId], references: [id])
+
+  decision admin_decision_enum
+  catatan  String?
+
+  createdAt DateTime @default(now())
+}
+
+// ==============================
+// MODEL — ARCHIVE
+// ==============================
+
+model Archive {
+  id String @id @default(uuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+
+  tahapKe    Int
+  judulTahap String
+  status     status_task_enum
+  progress   progress_enum
+
+  reason archive_reason_enum
+
+  archivedById String?
+  archivedBy   User?   @relation(fields: [archivedById], references: [id])
+
+  archivedAt DateTime @default(now())
 }

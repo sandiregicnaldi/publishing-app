@@ -72,6 +72,7 @@ enum kategori_enum {
 enum status_task_enum {
   DRAFT
   SEDANG_BERJALAN
+  PERLU_REVISI
   MENUNGGU_KONFIRMASI
   SELESAI
 }
@@ -161,6 +162,12 @@ model AdminConfirmation {
   decision admin_decision_enum
   catatan  String?
 
+  // 🔍 snapshot (audit)
+statusAtDecision   status_task_enum?
+progressAtDecision progress_enum?
+
+
+
   createdAt DateTime @default(now())
 }
 
@@ -189,3 +196,4 @@ model Archive {
 
   archivedAt DateTime @default(now())
 }
+

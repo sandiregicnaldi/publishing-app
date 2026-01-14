@@ -1,35 +1,22 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "../auth/[...nextauth]/route"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
-
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    )
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const role = session.user.role
-
   if (role !== "ADMIN" && role !== "PJ") {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
-    )
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const body = await req.json()
-  const { judul, kategori, pjId } = body
-
+  const { judul, kategori, pjId } = await req.json()
   if (!judul || !kategori || !pjId) {
-    return NextResponse.json(
-      { error: "Invalid payload" },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
   const project = await db.project.create({
@@ -45,63 +32,12 @@ export async function POST(req: Request) {
           judulTahap: "Tahap 1",
           status: "DRAFT",
           progress: "P0_25",
-          isActive: true
-        }
-      }
+          isActive: true,
+        },
+      },
     },
-    include: {
-      tasks: true
-    }
+    include: { tasks: true },
   })
 
   return NextResponse.json(project)
-}
-
-export async function GET() {
-  const session = await getServerSession(authOptions)
-
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    )
-  }
-
-  const role = session.user.role
-  const userId = session.user.id
-
-  let whereClause: any = {}
-
-  // ADMIN & VIEWER lihat semua
-  if (role === "PJ") {
-    whereClause = {
-      pjId: userId
-    }
-  }
-
-  const projects = await db.project.findMany({
-    where: whereClause,
-    orderBy: {
-      createdAt: "desc"
-    },
-    include: {
-      pj: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
-      tasks: {
-        where: {
-          isActive: true
-        },
-        orderBy: {
-          tahapKe: "asc"
-        }
-      }
-    }
-  })
-
-  return NextResponse.json(projects)
 }

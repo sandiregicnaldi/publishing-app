@@ -62,7 +62,7 @@ if (currentTask.status === status_task_enum.PERLU_REVISI) {
   nextStatus = status_task_enum.SEDANG_BERJALAN
 }
 
-if (!task.isActive) {
+if (!currentTask.isActive) {
   return NextResponse.json(
     { error: "Task is no longer active" },
     { status: 400 }

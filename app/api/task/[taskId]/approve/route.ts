@@ -92,10 +92,14 @@ if (anotherActiveTask) {
 
     // 2️⃣ Simpan keputusan admin
     await tx.adminConfirmation.create({
+        
       data: {
         taskId: taskId,
         adminId: adminId,
         decision: admin_decision_enum.SETUJU
+        statusAtDecision: task.status,
+progressAtDecision: task.progress,
+
       }
     })
 

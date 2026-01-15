@@ -1,3 +1,7 @@
+import {
+  status_task_enum,
+  progress_enum
+} from "@prisma/client"
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
